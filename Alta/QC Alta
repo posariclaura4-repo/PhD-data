@@ -1,0 +1,309 @@
+# ALTA - QA ---------------------------------------------------------------
+seq_qa_alta <- read_excel('DATA/Alta_QA.xlsx', sheet = 'Table1_1')
+seq_qa_alta
+
+seq_qa_alta <- data.frame(seq_qa_alta)
+seq_qa_alta 
+
+str(seq_qa_alta)
+colnames(seq_qa_alta)
+
+
+Aqa_plots <- function(seq_qa_alta){
+  
+  library(dplyr)
+  library(stringr)
+  library(ggplot2)
+  
+  grupa1 <- c("As", "Cd", "Co", "Cr", "Cu", "Mn")
+  
+  step_order <- c(
+    "Water-soluble fraction",
+    "Exchangeable fraction",
+    "Poorly crystalline Fe(III)-oxyhydroxides",
+    "Crystalline Fe(III)-oxides",
+    "Organic matter",
+    "Primary sulfide fraction",
+    "Residual fraction"
+  )
+  
+  data_clean_Aqa <- seq_qa_alta %>%
+    filter(Element %in% grupa1) %>%
+    filter(!is.na(Element)) %>%
+    
+    # ✅ Sample stupac
+    mutate(
+      Sample = .[[grep("sample", names(.), ignore.case = TRUE)[1]]]
+    ) %>%
+    
+    # ✅ Concentration cleanup
+    mutate(
+      Concentration = as.character(Concentration),
+      Concentration = gsub(",", ".", Concentration),
+      Concentration = gsub("[^0-9.]", "", Concentration),
+      Concentration = as.numeric(Concentration)
+    ) %>%
+    
+    # ✅ Step order
+    mutate(
+      Step = factor(Step, levels = step_order)
+    ) %>%
+    
+    # ✅ grupiranje
+    mutate(
+      Sample_group = str_replace(Sample, "[a-zA-Z]$", "")
+    ) %>%
+    
+    # ✅ NOVI FILTER
+    filter(
+      Sample_group == "J016" | Step == "Residual fraction"
+    )
+  
+  # ✅ statistika
+  stats <- data_clean_Aqa %>%
+    group_by(Element, Step, Sample_group) %>%
+    summarise(
+      mean_val = mean(Concentration, na.rm = TRUE),
+      median_val = median(Concentration, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  # ✅ plot
+  ggplot(data_clean_Aqa, aes(x = Sample_group, y = Concentration)) +
+    
+    geom_col(
+      aes(fill = Step,
+          group = interaction(Sample, Step)),
+      # stat = "identity",
+      position = position_dodge(width = 0.8),
+      alpha = 0.6
+    ) +
+    
+    geom_boxplot(
+      aes(group = Sample_group),
+      width = 0.5,
+      fill = NA,
+      color = "black",
+      outlier.shape = NA, 
+      alpha = 0.7
+    ) +
+    
+    geom_point(
+      data = stats,
+      aes(x = Sample_group, y = median_val),
+      color = "red",
+      size = 9
+    ) +
+    
+    geom_point(
+      data = stats,
+      aes(x = Sample_group, y = mean_val),
+      color = "blue",
+      shape = 4,
+      size = 11
+    ) +
+    
+    facet_grid2(      #ggh4x paket
+      rows = vars(Element),
+      cols = vars(Step),
+      scales = "free",
+      independent = "all",
+      space = "free_x",
+      labeller = labeller(
+        Step = label_wrap_gen(width = 20)
+      ))+
+    
+    labs(
+      x = "Sample group",
+      y = "Concentration [mg/kg]",
+      fill = ""
+    ) +
+    scale_x_discrete(drop = TRUE)+
+    
+    
+    scale_fill_manual(values = SSE_skala) +
+    
+    theme_minimal() +
+    theme(
+      legend.position = 'bottom',
+      strip.text = element_text(face = "bold"),
+      text = element_text(size = 60),
+      axis.text.x = element_text(angle = 45),
+      legend.key.size = unit(5, "line"),
+      legend.title = element_text(size = 65),
+      legend.text = element_text(size = 60)
+    )
+}
+
+
+polt_Aqa <- Aqa_plots(seq_qa_alta)
+
+tiff("TIFF/QA_ALTA_G1.tiff", width = 4000, height = 5000)
+plot(polt_Aqa)
+dev.off()
+
+
+Aqa2_plots <- function(seq_qa_alta){
+  
+  library(dplyr)
+  library(stringr)
+  library(ggplot2)
+  
+  grupa2 <- c("Mo", "Ni", "Pb", "Sb", "Sc", "Zn")
+  
+  step_order <- c(
+    "Water-soluble fraction",
+    "Exchangeable fraction",
+    "Poorly crystalline Fe(III)-oxyhydroxides",
+    "Crystalline Fe(III)-oxides",
+    "Organic matter",
+    "Primary sulfide fraction",
+    "Residual fraction"
+  )
+  
+  data_clean_Aqa2 <- seq_qa_alta %>%
+    filter(Element %in% grupa2) %>%
+    filter(!is.na(Element)) %>%
+    
+    # ✅ Sample stupac
+    mutate(
+      Sample = .[[grep("sample", names(.), ignore.case = TRUE)[1]]]
+    ) %>%
+    
+    # ✅ Concentration cleanup
+    mutate(
+      Concentration = as.character(Concentration),
+      Concentration = gsub(",", ".", Concentration),
+      Concentration = gsub("[^0-9.]", "", Concentration),
+      Concentration = as.numeric(Concentration)
+    ) %>%
+    
+    # ✅ Step order
+    mutate(
+      Step = factor(Step, levels = step_order)
+    ) %>%
+    
+    # ✅ grupiranje
+    mutate(
+      Sample_group = str_replace(Sample, "[a-zA-Z]$", "")
+    ) %>%
+    
+    # ✅ NOVI FILTER
+    filter(
+      Sample_group == "J016" | Step == "Residual fraction"
+    )
+  
+  # ✅ statistika
+  stats <- data_clean_Aqa2 %>%
+    group_by(Element, Step, Sample_group) %>%
+    summarise(
+      mean_val = mean(Concentration, na.rm = TRUE),
+      median_val = median(Concentration, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  # ✅ plot
+  ggplot(data_clean_Aqa2, aes(x = Sample_group, y = Concentration)) +
+    
+    geom_bar(
+      aes(fill = Step,
+          group = interaction(Sample, Step)),
+      stat = "identity",
+      position = position_dodge(width = 0.8),
+      alpha = 0.6
+    ) +
+    
+    geom_boxplot(
+      aes(group = Sample_group),
+      width = 0.5,
+      fill = NA,
+      color = "black",
+      outlier.shape = NA, 
+      alpha = 0.7
+    ) +
+    
+    geom_point(
+      data = stats,
+      aes(x = Sample_group, y = median_val),
+      color = "red",
+      size = 9
+    ) +
+    
+    geom_point(
+      data = stats,
+      aes(x = Sample_group, y = mean_val),
+      color = "blue",
+      shape = 4,
+      size = 11
+    ) +
+    
+    facet_grid2(      #ggh4x paket
+      rows = vars(Element),
+      cols = vars(Step),
+      scales = "free",
+      independent = "all",
+      space = "free_x",
+      labeller = labeller(
+        Step = label_wrap_gen(width = 20)
+      ))+
+    
+    labs(
+      x = "Sample group",
+      y = "Concentration [mg/kg]",
+      fill = ""
+    ) +
+    scale_x_discrete(drop = TRUE)+
+    
+    scale_fill_manual(values = SSE_skala) +
+    
+    theme_minimal() +
+    theme(
+      legend.position = 'bottom',
+      strip.text = element_text(face = "bold"),
+      text = element_text(size = 60),
+      axis.text.x = element_text(angle = 45),
+      legend.key.size = unit(5, "line"),
+      legend.title = element_text(size = 65),
+      legend.text = element_text(size = 60)
+    )
+}
+
+
+polt_Aqa2 <- Aqa2_plots(seq_qa_alta)
+
+tiff("TIFF/QA_ALTA_G2.tiff", width = 4000, height = 5000)
+plot(polt_Aqa2)
+dev.off()
+
+####SUMMED VALUES COMPARISON----------------------------------------------------
+summedA <-  read_excel("DATA/Alta_QA.xlsx", sheet = "SUMMED")
+summedA
+summedA <-  data.frame(summedA)
+str(summedA)
+
+sample.levels <- c('J010', 'J033', 'J041')
+sample.levels <- as.factor(sample.levels)
+str(sample.levels)
+
+summed_plot <- ggplot(summedA, aes(fill=Procedure, y= Concentration, x=Sample.Interval)) +
+  geom_bar(position='dodge', stat = 'identity') +
+  #stat omogu?uje da se uo?ava koliko ?ega ima. Za njega treba definirati x i y u aes()
+  scale_fill_manual(values = c('violetred4', 'cornflowerblue'), name = "Legend")+
+  scale_x_discrete(limits=c('J010', 'J033', 'J041'))+
+  facet_wrap(~Element, scales = "free_y")+
+  theme_minimal(base_size = 14) +
+  labs(x="Sample", y="Concentration [mg/kg]")+
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(angle = 45),
+        plot.title = element_text(size=13),
+        axis.text = element_text(size = 12), 
+        axis.title = element_text(size = 12), 
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 14))
+
+
+summed_plot
+
+tiff("TIFF/Summed_values_Alta.tiff", res=300, width = 3000, height = 2500)
+plot(summed_plot)
+dev.off()
